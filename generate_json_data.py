@@ -10,24 +10,35 @@ def generate_json_data(split_path, data_path, max_captions_per_image, min_word_c
     train_caption_tokens = []
     validation_img_paths = []
     validation_caption_tokens = []
+    
+    train_count = 10000
+    val_count = 2000
 
     max_length = 0
     for img in split['images']:
         caption_count = 0
-        for sentence in img['sentences']:
-            if caption_count < max_captions_per_image:
-                caption_count += 1
-            else:
-                break
+        
+        if val_count == 0 and train_count == 0: break
+        
+        if img['split'] == 'train':
+            for sentence in img['sentences']:
+                if caption_count < max_captions_per_image:
+                    caption_count += 1
+                else:
+                    break
 
-            if img['split'] == 'train':
-                train_img_paths.append(data_path + '/imgs/' + img['filepath'] + '/' + img['filename'])
-                train_caption_tokens.append(sentence['tokens'])
-            elif img['split'] == 'val':
-                validation_img_paths.append(data_path + '/imgs/' + img['filepath'] + '/' + img['filename'])
-                validation_caption_tokens.append(sentence['tokens'])
-            max_length = max(max_length, len(sentence['tokens']))
-            word_count.update(sentence['tokens'])
+                if train_count > 0:
+                    train_img_paths.append(data_path + '/imgs/' + img['filepath'] + '/' + img['filename'])
+                    train_caption_tokens.append(sentence['tokens'])
+                    train_count = train_count - 1
+                elif val_count > 0:
+                    validation_img_paths.append(data_path + '/imgs/' + img['filepath'] + '/' + img['filename'])
+                    validation_caption_tokens.append(sentence['tokens'])
+                    val_count = val_count - 1
+                else: break
+
+                max_length = max(max_length, len(sentence['tokens']))
+                word_count.update(sentence['tokens'])
 
     words = [word for word in word_count.keys() if word_count[word] >= args.min_word_count]
     word_dict = {word: idx + 4 for idx, word in enumerate(words)}
